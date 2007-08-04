@@ -1,0 +1,26 @@
+#!/bin/sh
+CONFIGFILE=/etc/ushare.conf
+
+set -e
+. /usr/share/debconf/confmodule
+
+update_conf() {
+  VARIABLE=$1
+  VAL=$2
+  sed -i -e "s%^[[:space:]]*$VARIABLE=.*%$VARIABLE=$VAL%" $CONFIGFILE
+}
+
+if [ ! -e $CONFIGFILE ]; then
+  install -m 644 /usr/share/ushare/ushare.conf $CONFIGFILE
+fi
+
+db_get ushare/name
+update_conf USHARE_NAME "$RET"
+
+db_get ushare/iface
+update_conf USHARE_IFACE "$RET"
+
+db_get ushare/share
+update_conf USHARE_DIR "$RET"
+
+#DEBHELPER#
