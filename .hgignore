@@ -1,0 +1,22 @@
+syntax :regexp
+
+# general
+\.o
+\.deps
+\.depend
+config.h
+config.log
+config.mak
+
+# po files
+POTFILES
+Makevars.template
+Rules-quot
+\.sed
+\.header
+\.sin
+stamp-.*
+\.gmo
+
+# exec files
+ushare$
