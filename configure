@@ -638,8 +638,8 @@ check_lib iconv.h iconv "" && add_cflags -DHAVE_ICONV
 libdlna_min_version="0.3.0"
 echolog "Checking for libdlna >= $libdlna_min_version ..."
 if [ -n "$libdlnadir" ]; then
-  check_cflags -I$libdlnadir
-  check_ldflags -L$libdlnadir
+  check_cflags -I$libdlnadir/include
+  check_ldflags -L$libdlnadir/lib
 fi
 check_lib dlna.h dlna_register_all_media_profiles -ldlna || die "Error, can't find libdlna (install it) !"
 check_lib_version libdlna $libdlna_min_version || die "Error, libdlna < $libdlna_min_version !"
