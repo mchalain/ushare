@@ -79,8 +79,13 @@ add_container (dlna_t *dlna, char *dir, uint32_t id)
       add_container (dlna, fullpath, cid);
     }
     else
-      dlna_vfs_add_resource (dlna, basename (fullpath),
-                                   fullpath, st.st_size, id);
+    {
+      dlna_item_t *item;
+
+      item = dlna_item_new (dlna, fullpath);
+      if (item)
+        dlna_vfs_add_resource (dlna, basename (fullpath), item, id);
+    }
     
     free (namelist[i]);
     free (fullpath);

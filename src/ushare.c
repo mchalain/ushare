@@ -71,6 +71,10 @@
 #include "ufam.h"
 #endif /* HAVE_FAM */
 
+extern const dlna_profiler_t mpg123_profiler;
+extern int mpg123_profiler_init ();
+#include <ffmpeg_profiler.h>
+
 ushare_t *ut = NULL;
 
 static ushare_t *
@@ -164,7 +168,7 @@ finish_upnp (ushare_t *ut)
 #ifdef HAVE_FAM
   ufam_stop (ut->ufam);
 #endif /* HAVE_FAM */
-  dlna_dms_uninit (ut->dlna);
+  dlna_stop (ut->dlna);
 
   return 0;
 }
@@ -188,30 +192,54 @@ init_upnp (ushare_t *ut)
   dlna_set_org_flags (ut->dlna, flags);
   dlna_set_verbosity (ut->dlna, ut->verbose ? 1 : 0);
   dlna_set_extension_check (ut->dlna, 0);
-  dlna_register_all_media_profiles (ut->dlna);
   
-  dlna_device_set_friendly_name (ut->dlna, ut->name);
-  dlna_device_set_manufacturer (ut->dlna, "GeeXboX Team");
-  dlna_device_set_manufacturer_url (ut->dlna, "http://ushare.geexbox.org/");
-  dlna_device_set_model_description (ut->dlna, "uShare : DLNA Media Server");
-  dlna_device_set_model_name (ut->dlna, ut->model_name);
-  dlna_device_set_model_number (ut->dlna, "001");
-  dlna_device_set_model_url (ut->dlna, "http://ushare.geexbox.org/");
-  dlna_device_set_serial_number (ut->dlna, "USHARE-01");
-  dlna_device_set_uuid (ut->dlna, ut->udn);
-  dlna_device_set_presentation_url (ut->dlna, "ushare.html");
-
   dlna_set_capability_mode (ut->dlna, ut->caps);
   if (ut->caps == DLNA_CAPABILITY_DLNA)
     log_info (_("Starting in DLNA compliant profile ...\n"));
-  if (ut->caps == DLNA_CAPABILITY_UPNP_AV_XBOX)
-    log_info (_("Starting in XboX 360 compliant profile ...\n"));
 
   dlna_set_interface (ut->dlna, ut->interface);
   dlna_set_port (ut->dlna, ut->port);
   
   log_info (_("Initializing UPnP subsystem ...\n"));
-  res = dlna_dms_init (ut->dlna);
+  const dlna_profiler_t *profiler;
+
+  profiler = &mpg123_profiler;
+  mpg123_profiler_init ();
+  dlna_add_profiler (ut->dlna, profiler);
+  profiler = &ffmpeg_profiler;
+  ffmpeg_profiler_register_all_media_profiles ();
+  dlna_add_profiler (ut->dlna, profiler);
+
+  /* set some UPnP device properties */
+  dlna_device_t *device;
+
+  device = dlna_device_new ();
+  dlna_device_set_type (device, DLNA_DEVICE_TYPE_DMS,"DMS");
+  dlna_device_set_friendly_name (device, ut->name);
+  dlna_device_set_manufacturer (device, "GeeXboX Team");
+  dlna_device_set_manufacturer_url (device, "http://ushare.geexbox.org/");
+  dlna_device_set_model_description (device, "uShare : DLNA Media Server");
+  dlna_device_set_model_name (device, ut->model_name);
+  dlna_device_set_model_number (device, "001");
+  dlna_device_set_model_url (device, "http://ushare.geexbox.org/");
+  dlna_device_set_serial_number (device, "USHARE-01");
+  dlna_device_set_uuid (device, ut->udn);
+  dlna_device_set_presentation_url (device, "ushare.html");
+
+  /* set default default service */
+  dlna_service_register (device, cms_service_new(ut->dlna));
+  dlna_service_register (device, cds_service_new(ut->dlna));
+  if (ut->caps == DLNA_CAPABILITY_UPNP_AV_XBOX)
+  {
+    log_info (_("Starting in XboX 360 compliant profile ...\n"));
+    dlna_service_register (device, msr_service_new(ut->dlna));
+  }
+
+  dlna_set_device (ut->dlna, device);
+
+  build_metadata_list (ut);
+
+  res = dlna_start (ut->dlna);
   if (res != DLNA_ST_OK)
   {
     log_error (_("Cannot initialize UPnP subsystem\n"));
@@ -502,7 +530,9 @@ display_headers (void)
   printf (_("%s (version %s), a lightweight UPnP A/V and DLNA Media Server.\n"),
           PACKAGE_NAME, VERSION);
   printf (_("Benjamin Zores (C) 2005-2007, for GeeXboX Team.\n"));
+  printf (_("Marc Chalain (C) 2014-2016.\n"));
   printf (_("See http://ushare.geexbox.org/ for updates.\n"));
+  printf (_("See http://github.com/mchalain/ushare for updates.\n"));
 }
 
 inline static void
@@ -622,8 +652,6 @@ main (int argc, char **argv)
     ushare_free (ut);
     return EXIT_FAILURE;
   }
-
-  build_metadata_list (ut);
 
   /* Let main sleep until it's time to die... */
   pthread_mutex_lock (&ut->termination_mutex);
