@@ -38,8 +38,33 @@
 #include "ufam.h"
 #endif /* HAVE_FAM */
 
+#define DEFAULT_CONTAINER_VALUE 10
+#define DLNA_CLASS_FOLDER (DLNA_CLASS_COLLECTION + 1)
+struct {
+  uint32_t id;
+  char *name;
+} ushare_containers[] = {
+  [DLNA_CLASS_UNKNOWN] = { .id = DLNA_CLASS_UNKNOWN + DEFAULT_CONTAINER_VALUE, .name = "others" },
+  [DLNA_CLASS_IMAGE] = { .id = DLNA_CLASS_IMAGE + DEFAULT_CONTAINER_VALUE, .name = "image" },
+  [DLNA_CLASS_AUDIO] = { .id = DLNA_CLASS_AUDIO + DEFAULT_CONTAINER_VALUE, .name = "music" },
+  [DLNA_CLASS_AV] = { .id = DLNA_CLASS_AV + DEFAULT_CONTAINER_VALUE, .name = "video" },
+  [DLNA_CLASS_COLLECTION] = { .id = DLNA_CLASS_AUDIO + DEFAULT_CONTAINER_VALUE, .name = "music" },
+  [DLNA_CLASS_FOLDER] = { .id = DLNA_CLASS_FOLDER + DEFAULT_CONTAINER_VALUE, .name = "folders" },
+};
+
 static void
-add_container (dlna_t *dlna, char *dir, uint32_t id)
+add_virtualfolder (dlna_vfs_t *vfs, char *name, dlna_item_t *item)
+{
+  dlna_media_class_t id;
+
+  id = dlna_item_type (item);
+
+  dlna_vfs_add_container (vfs, ushare_containers[id].name, ushare_containers[id].id, 0);
+  dlna_vfs_add_resource (vfs, name, item, ushare_containers[id].id);
+}
+
+static void
+parse_container (dlna_t *dlna, dlna_vfs_t *vfs, char *dir, uint32_t id)
 {
   struct dirent **namelist;
   int n, i;
@@ -53,6 +78,7 @@ add_container (dlna_t *dlna, char *dir, uint32_t id)
 
   for (i = 0; i < n; i++)
   {
+    uint32_t cid;
     struct stat st;
     char *fullpath = NULL;
 
@@ -72,11 +98,14 @@ add_container (dlna_t *dlna, char *dir, uint32_t id)
       continue;
     }
 
+    if (!id)
+      cid = ushare_containers[DLNA_CLASS_FOLDER].id;
+    else
+      cid = id;
     if (S_ISDIR (st.st_mode))
     {
-      uint32_t cid;
-      cid = dlna_vfs_add_container (dlna, basename (fullpath), 0, id);
-      add_container (dlna, fullpath, cid);
+      cid = dlna_vfs_add_container (vfs, basename (fullpath), 0, cid);
+      parse_container (dlna, vfs, fullpath, cid);
     }
     else
     {
@@ -84,7 +113,10 @@ add_container (dlna_t *dlna, char *dir, uint32_t id)
 
       item = dlna_item_new (dlna, fullpath);
       if (item)
-        dlna_vfs_add_resource (dlna, basename (fullpath), item, id);
+      {
+        add_virtualfolder (vfs, basename (fullpath), item);
+        dlna_vfs_add_resource (vfs, basename (fullpath), item, cid);
+      }
     }
     
     free (namelist[i]);
@@ -100,18 +132,21 @@ build_metadata_list (ushare_t *ut)
   
   log_info (_("Building Metadata List ...\n"));
 
+  ushare_containers[DLNA_CLASS_FOLDER].id = dlna_vfs_add_container (ut->vfs, 
+                                ushare_containers[DLNA_CLASS_FOLDER].name, 
+                                ushare_containers[DLNA_CLASS_FOLDER].id, 0);
   /* add files from content directory */
   for (i = 0 ; i < ut->contentlist->count ; i++)
   {
     log_info (_("Looking for files in content directory : %s\n"),
               ut->contentlist->content[i]);
 
-    add_container (ut->dlna, ut->contentlist->content[i], 0);
+    parse_container (ut->dlna, ut->vfs, ut->contentlist->content[i], 0);
   }
 }
 
 void
 free_metadata_list (ushare_t *ut)
 {
-  dlna_vfs_remove_item_by_id (ut->dlna, 0);
+  dlna_vfs_remove_item_by_id (ut->vfs, 0);
 }

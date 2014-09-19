@@ -48,6 +48,7 @@ typedef struct ushare_s {
   bool use_presentation;
   bool use_telnet;
   dlna_t *dlna;
+  dlna_vfs_t *vfs;
   dlna_org_flags_t dlna_flags;
   dlna_capability_mode_t caps;
   bool verbose;

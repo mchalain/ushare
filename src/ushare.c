@@ -227,8 +227,10 @@ init_upnp (ushare_t *ut)
   dlna_device_set_presentation_url (device, "ushare.html");
 
   /* set default default service */
+  ut->vfs = dlna_vfs_new (ut->dlna);
+
   dlna_service_register (device, cms_service_new(ut->dlna));
-  dlna_service_register (device, cds_service_new(ut->dlna));
+  dlna_service_register (device, cds_service_new(ut->dlna, ut->vfs));
   if (ut->caps == DLNA_CAPABILITY_UPNP_AV_XBOX)
   {
     log_info (_("Starting in XboX 360 compliant profile ...\n"));
