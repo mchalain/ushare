@@ -180,7 +180,7 @@ init_upnp (ushare_t *ut)
   extern dlna_http_callback_t ushare_http_callbacks;
   dlna_org_flags_t flags;
   
-  if (!ut || !ut->name || !ut->udn)
+  if (!ut || !ut->name || !ut->udn || !ut->dlna || !ut->vfs)
     return -1;
 
   flags = DLNA_ORG_FLAG_STREAMING_TRANSFER_MODE |
@@ -188,7 +188,6 @@ init_upnp (ushare_t *ut)
           DLNA_ORG_FLAG_CONNECTION_STALL |
           DLNA_ORG_FLAG_DLNA_V15;
   
-  ut->dlna = dlna_init ();
   dlna_set_org_flags (ut->dlna, flags);
   dlna_set_verbosity (ut->dlna, ut->verbose ? 1 : 0);
   dlna_set_extension_check (ut->dlna, 0);
@@ -201,14 +200,6 @@ init_upnp (ushare_t *ut)
   dlna_set_port (ut->dlna, ut->port);
   
   log_info (_("Initializing UPnP subsystem ...\n"));
-  const dlna_profiler_t *profiler;
-
-  profiler = &mpg123_profiler;
-  mpg123_profiler_init ();
-  dlna_add_profiler (ut->dlna, profiler);
-  profiler = &ffmpeg_profiler;
-  ffmpeg_profiler_register_all_media_profiles ();
-  dlna_add_profiler (ut->dlna, profiler);
 
   /* set some UPnP device properties */
   dlna_device_t *device;
@@ -227,8 +218,6 @@ init_upnp (ushare_t *ut)
   dlna_device_set_presentation_url (device, "ushare.html");
 
   /* set default default service */
-  ut->vfs = dlna_vfs_new (ut->dlna);
-
   dlna_service_register (device, cms_service_new(ut->dlna));
   dlna_service_register (device, cds_service_new(ut->dlna, ut->vfs));
   if (ut->caps &= DLNA_CAPABILITY_UPNP_AV_XBOX)
@@ -569,6 +558,8 @@ ushare_kill (ctrl_telnet_client_t *client,
 int
 main (int argc, char **argv)
 {
+  const dlna_profiler_t *profiler;
+
   ut = ushare_new ();
   if (!ut)
     return EXIT_FAILURE;
@@ -576,9 +567,20 @@ main (int argc, char **argv)
   setup_i18n ();
   setup_iconv ();
 
+  ut->dlna = dlna_init ();
+  ut->vfs = dlna_vfs_new (ut->dlna);
+
+  profiler = &mpg123_profiler;
+  mpg123_profiler_init ();
+  dlna_add_profiler (ut->dlna, profiler);
+//  profiler = &ffmpeg_profiler;
+//  ffmpeg_profiler_register_all_media_profiles ();
+//  dlna_add_profiler (ut->dlna, profiler);
+
   /* Parse args before cfg file, as we may override the default file */
   if (parse_command_line (ut, argc, argv) < 0)
   {
+    dlna_uninit (ut->dlna);
     ushare_free (ut);
     return EXIT_SUCCESS;
   }
@@ -599,12 +601,14 @@ main (int argc, char **argv)
   if (!ut->contentlist)
   {
     log_error (_("Error: no content directory to be shared.\n"));
+    dlna_uninit (ut->dlna);
     ushare_free (ut);
     return EXIT_FAILURE;
   }
 
   if (!has_iface (ut->interface))
   {
+    dlna_uninit (ut->dlna);
     ushare_free (ut);
     return EXIT_FAILURE;
   }
@@ -612,6 +616,7 @@ main (int argc, char **argv)
   ut->udn = create_udn (ut->interface);
   if (!ut->udn)
   {
+    dlna_uninit (ut->dlna);
     ushare_free (ut);
     return EXIT_FAILURE;
   }
@@ -624,6 +629,7 @@ main (int argc, char **argv)
     {
       log_error (_("Error: failed to daemonize program : %s\n"),
                  strerror (err));
+      dlna_uninit (ut->dlna);
       ushare_free (ut);
       return EXIT_FAILURE;
     }
@@ -640,6 +646,7 @@ main (int argc, char **argv)
   {
     if (ctrl_telnet_start (ut->telnet_port) < 0)
     {
+      dlna_uninit (ut->dlna);
       ushare_free (ut);
       return EXIT_FAILURE;
     }
@@ -651,6 +658,7 @@ main (int argc, char **argv)
   if (init_upnp (ut) < 0)
   {
     finish_upnp (ut);
+    dlna_uninit (ut->dlna);
     ushare_free (ut);
     return EXIT_FAILURE;
   }
@@ -663,6 +671,7 @@ main (int argc, char **argv)
   if (ut->use_telnet)
     ctrl_telnet_stop ();
   finish_upnp (ut);
+  dlna_uninit (ut->dlna);
   ushare_free (ut);
   finish_iconv ();
 
