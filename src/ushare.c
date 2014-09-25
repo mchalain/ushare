@@ -194,7 +194,7 @@ init_upnp (ushare_t *ut)
   dlna_set_extension_check (ut->dlna, 0);
   
   dlna_set_capability_mode (ut->dlna, ut->caps);
-  if (ut->caps == DLNA_CAPABILITY_DLNA)
+  if (ut->caps &= DLNA_CAPABILITY_DLNA)
     log_info (_("Starting in DLNA compliant profile ...\n"));
 
   dlna_set_interface (ut->dlna, ut->interface);
@@ -231,7 +231,7 @@ init_upnp (ushare_t *ut)
 
   dlna_service_register (device, cms_service_new(ut->dlna));
   dlna_service_register (device, cds_service_new(ut->dlna, ut->vfs));
-  if (ut->caps == DLNA_CAPABILITY_UPNP_AV_XBOX)
+  if (ut->caps &= DLNA_CAPABILITY_UPNP_AV_XBOX)
   {
     log_info (_("Starting in XboX 360 compliant profile ...\n"));
     dlna_service_register (device, msr_service_new(ut->dlna));

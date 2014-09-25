@@ -204,7 +204,7 @@ ushare_use_xbox (ushare_t *ut, const char *val)
   if (!ut || !val)
     return;
 
-  ut->caps = (!strcmp (val, "yes")) ?
+  ut->caps |= (!strcmp (val, "yes")) ?
     DLNA_CAPABILITY_UPNP_AV_XBOX : DLNA_CAPABILITY_UPNP_AV;
 }
 
@@ -214,7 +214,7 @@ ushare_use_dlna (ushare_t *ut, const char *val)
   if (!ut || !val)
     return;
 
-  ut->caps = (!strcmp (val, "yes")) ?
+  ut->caps |= (!strcmp (val, "yes")) ?
     DLNA_CAPABILITY_DLNA : DLNA_CAPABILITY_UPNP_AV;
 }
 
@@ -424,11 +424,11 @@ parse_command_line (ushare_t *ut, int argc, char **argv)
       break;
 
     case 'x':
-      ut->caps = DLNA_CAPABILITY_UPNP_AV_XBOX;
+      ut->caps |= DLNA_CAPABILITY_UPNP_AV_XBOX;
       break;
 
     case 'd':
-      ut->caps = DLNA_CAPABILITY_DLNA;
+      ut->caps |= DLNA_CAPABILITY_DLNA;
       break;
       
     case 'f':
