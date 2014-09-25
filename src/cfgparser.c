@@ -31,6 +31,7 @@
 #include "ushare.h"
 #include "trace.h"
 #include "osdep.h"
+#include "metadata.h"
 
 #define USHARE_DIR_DELIM ","
 
@@ -232,6 +233,24 @@ ushare_set_override_iconv_err (ushare_t *ut, const char *arg)
     ut->override_iconv_err = true;
 }
 
+static void
+ushare_external_item (ushare_t *ut, const char *val)
+{
+  if (!ut || !val)
+    return;
+  if (ut->vfs)
+  {
+    char *name;
+    char *url;
+
+    name = val;
+    url = strstr (val, ":");
+    *url = 0;
+    url++;
+    add_metadata_item (ut, name, url);
+  }
+}
+
 static u_configline_t configline[] = {
   { USHARE_NAME,                 ushare_set_name                },
   { USHARE_IFACE,                ushare_set_interface           },
@@ -243,6 +262,7 @@ static u_configline_t configline[] = {
   { USHARE_ENABLE_TELNET,        ushare_use_telnet              },
   { USHARE_ENABLE_XBOX,          ushare_use_xbox                },
   { USHARE_ENABLE_DLNA,          ushare_use_dlna                },
+  { USHARE_EXTERNAL_ITEM,        ushare_external_item           },
   { NULL,                        NULL                           },
 };
 

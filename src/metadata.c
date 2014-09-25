@@ -126,6 +126,18 @@ parse_container (dlna_t *dlna, dlna_vfs_t *vfs, char *dir, uint32_t id)
 }
 
 void
+add_metadata_item (ushare_t *ut, char *name, char *url)
+{
+    dlna_item_t *item;
+
+    item = dlna_item_new (ut->dlna, url);
+    if (item)
+    {
+      add_virtualfolder (ut->vfs, name, item);
+    }
+}
+
+void
 build_metadata_list (ushare_t *ut)
 {
   int i;
