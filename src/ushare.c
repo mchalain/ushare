@@ -571,10 +571,8 @@ main (int argc, char **argv)
   ut->vfs = dlna_vfs_new (ut->dlna);
 
   profiler = &mpg123_profiler;
-  mpg123_profiler_init ();
   dlna_add_profiler (ut->dlna, profiler);
 //  profiler = &ffmpeg_profiler;
-//  ffmpeg_profiler_register_all_media_profiles ();
 //  dlna_add_profiler (ut->dlna, profiler);
 
   /* Parse args before cfg file, as we may override the default file */
