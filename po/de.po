@@ -7,10 +7,11 @@ msgid ""
 msgstr ""
 "Project-Id-Version: uShare 0.9.8\n"
 "Report-Msgid-Bugs-To: ushare@geexbox.org\n"
-"POT-Creation-Date: 2007-11-18 16:25+0100\n"
+"POT-Creation-Date: 2007-11-18 17:38+0100\n"
 "PO-Revision-Date: 2006-09-20 22:12+0200\n"
 "Last-Translator: German uShare Team <ushare@geexbox.org>\n"
 "Language-Team: German uShare Team <ushare@geexbox.org>\n"
+"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -184,8 +185,8 @@ msgstr " -n, --name=NAME\tSet UPnP-freundlicher Name (vorgegeben ist '%s')\n"
 #, c-format
 msgid " -i, --interface=IFACE\tUse IFACE Network Interface (default is '%s')\n"
 msgstr ""
-" -i, --interface=IFACE\tBenutze IFACE Netzwerk Interface (vorgegeben ist '%"
-"s')\n"
+" -i, --interface=IFACE\tBenutze IFACE Netzwerk Interface (vorgegeben ist "
+"'%s')\n"
 
 #: src/cfgparser.c:324
 #, c-format

@@ -53,11 +53,12 @@
 #include <sys/param.h>
 #endif
 
+#include "config.h"
+
 #if (defined(HAVE_SETLOCALE) && defined(CONFIG_NLS))
 # include <locale.h>
 #endif
 
-#include "config.h"
 #include "ushare.h"
 #include "metadata.h"
 #include "util_iconv.h"
@@ -189,7 +190,6 @@ init_upnp (ushare_t *ut)
           DLNA_ORG_FLAG_DLNA_V15;
   
   ut->dlna = dlna_init ();
-  dlna_set_org_flags (ut->dlna, flags);
   dlna_set_verbosity (ut->dlna, ut->verbose ? 1 : 0);
   dlna_set_extension_check (ut->dlna, 0);
   
@@ -206,14 +206,14 @@ init_upnp (ushare_t *ut)
   profiler = &mpg123_profiler;
   mpg123_profiler_init ();
   dlna_add_profiler (ut->dlna, profiler);
-  profiler = &ffmpeg_profiler;
-  ffmpeg_profiler_register_all_media_profiles ();
-  dlna_add_profiler (ut->dlna, profiler);
+//  profiler = &ffmpeg_profiler;
+//  ffmpeg_profiler_register_all_media_profiles ();
+//  dlna_add_profiler (ut->dlna, profiler);
 
   /* set some UPnP device properties */
   dlna_device_t *device;
 
-  device = dlna_device_new ();
+  device = dlna_device_new (ut->caps);
   dlna_device_set_type (device, DLNA_DEVICE_TYPE_DMS,"DMS");
   dlna_device_set_friendly_name (device, ut->name);
   dlna_device_set_manufacturer (device, "GeeXboX Team");
@@ -228,7 +228,7 @@ init_upnp (ushare_t *ut)
 
   /* set default default service */
   ut->vfs = dlna_vfs_new (ut->dlna);
-
+  dlna_vfs_set_mode (ut->vfs, flags);
   dlna_service_register (device, cms_service_new(ut->dlna));
   dlna_service_register (device, cds_service_new(ut->dlna, ut->vfs));
   if (ut->caps == DLNA_CAPABILITY_UPNP_AV_XBOX)
