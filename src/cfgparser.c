@@ -31,6 +31,7 @@
 #include "ushare.h"
 #include "trace.h"
 #include "osdep.h"
+#include "metadata.h"
 
 #define USHARE_DIR_DELIM ","
 
@@ -204,7 +205,7 @@ ushare_use_xbox (ushare_t *ut, const char *val)
   if (!ut || !val)
     return;
 
-  ut->caps = (!strcmp (val, "yes")) ?
+  ut->caps |= (!strcmp (val, "yes")) ?
     DLNA_CAPABILITY_UPNP_AV_XBOX : DLNA_CAPABILITY_UPNP_AV;
 }
 
@@ -214,7 +215,7 @@ ushare_use_dlna (ushare_t *ut, const char *val)
   if (!ut || !val)
     return;
 
-  ut->caps = (!strcmp (val, "yes")) ?
+  ut->caps |= (!strcmp (val, "yes")) ?
     DLNA_CAPABILITY_DLNA : DLNA_CAPABILITY_UPNP_AV;
 }
 
@@ -232,6 +233,24 @@ ushare_set_override_iconv_err (ushare_t *ut, const char *arg)
     ut->override_iconv_err = true;
 }
 
+static void
+ushare_external_item (ushare_t *ut, const char *val)
+{
+  if (!ut || !val)
+    return;
+  if (ut->vfs)
+  {
+    char *name;
+    char *url;
+
+    name = val;
+    url = strstr (val, ":");
+    *url = 0;
+    url++;
+    add_metadata_item (ut, name, url);
+  }
+}
+
 static u_configline_t configline[] = {
   { USHARE_NAME,                 ushare_set_name                },
   { USHARE_IFACE,                ushare_set_interface           },
@@ -243,6 +262,7 @@ static u_configline_t configline[] = {
   { USHARE_ENABLE_TELNET,        ushare_use_telnet              },
   { USHARE_ENABLE_XBOX,          ushare_use_xbox                },
   { USHARE_ENABLE_DLNA,          ushare_use_dlna                },
+  { USHARE_EXTERNAL_ITEM,        ushare_external_item           },
   { NULL,                        NULL                           },
 };
 
@@ -424,11 +444,11 @@ parse_command_line (ushare_t *ut, int argc, char **argv)
       break;
 
     case 'x':
-      ut->caps = DLNA_CAPABILITY_UPNP_AV_XBOX;
+      ut->caps |= DLNA_CAPABILITY_UPNP_AV_XBOX;
       break;
 
     case 'd':
-      ut->caps = DLNA_CAPABILITY_DLNA;
+      ut->caps |= DLNA_CAPABILITY_DLNA;
       break;
       
     case 'f':

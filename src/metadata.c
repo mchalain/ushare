@@ -104,7 +104,7 @@ parse_container (dlna_t *dlna, dlna_vfs_t *vfs, char *dir, uint32_t id)
       cid = id;
     if (S_ISDIR (st.st_mode))
     {
-      cid = dlna_vfs_add_container (vfs, basename (fullpath), 0, cid);
+      cid = dlna_vfs_add_container (vfs, fullpath, 0, cid);
       parse_container (dlna, vfs, fullpath, cid);
     }
     else
@@ -123,6 +123,18 @@ parse_container (dlna_t *dlna, dlna_vfs_t *vfs, char *dir, uint32_t id)
     free (fullpath);
   }
   free (namelist);
+}
+
+void
+add_metadata_item (ushare_t *ut, char *name, char *url)
+{
+    dlna_item_t *item;
+
+    item = dlna_item_new (ut->dlna, url);
+    if (item)
+    {
+      add_virtualfolder (ut->vfs, name, item);
+    }
 }
 
 void
