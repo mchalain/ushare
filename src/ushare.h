@@ -25,7 +25,7 @@
 #include <stdbool.h>
 #include <pthread.h>
 
-#include <dlna.h>
+#include <upnp/dlna.h>
 
 #include "content.h"
 #include "buffer.h"

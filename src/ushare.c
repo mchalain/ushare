@@ -72,9 +72,8 @@
 #include "ufam.h"
 #endif /* HAVE_FAM */
 
-extern const dlna_profiler_t mpg123_profiler;
-extern int mpg123_profiler_init ();
-#include <ffmpeg_profiler.h>
+#include <upnp/ffmpeg_profiler.h>
+#include <upnp/mpg123_profiler.h>
 
 ushare_t *ut = NULL;
 
@@ -202,6 +201,7 @@ init_upnp (ushare_t *ut)
   log_info (_("Initializing UPnP subsystem ...\n"));
 
   dlna_vfs_set_mode (ut->vfs, flags);
+  dlna_vfs_add_protocol (ut->vfs, http_protocol_new (ut->dlna));
 
   /* set some UPnP device properties */
   dlna_device_t *device;
@@ -217,7 +217,7 @@ init_upnp (ushare_t *ut)
   dlna_device_set_model_url (device, "http://ushare.geexbox.org/");
   dlna_device_set_serial_number (device, "USHARE-01");
   dlna_device_set_uuid (device, ut->udn);
-  dlna_device_set_presentation_url (device, "ushare.html");
+  dlna_device_set_presentation_url (device, "ushare.html", &ushare_http_callbacks);
 
   /* set default default service */
   dlna_service_register (device, cms_service_new(ut->dlna));
@@ -238,8 +238,6 @@ init_upnp (ushare_t *ut)
     log_error (_("Cannot initialize UPnP subsystem\n"));
     return -1;
   }
-
-  dlna_set_http_callback (ut->dlna, &ushare_http_callbacks);
 
   log_info (_("Listening for control point connections ...\n"));
 
