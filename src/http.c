@@ -40,96 +40,86 @@
 #define PROTOCOL_TYPE_SUFF_SZ 2    /* for the str length of ":*" */
 
 typedef struct web_file_s {
-  char *fullpath;
   off_t pos;
   char *contents;
   off_t len;
 } web_file_t;
 
-static inline void
-set_info_file (dlna_http_file_info_t *info,
-               const size_t length, const char *content_type)
-{
-  info->file_length   = length;
-  info->content_type  = strdup (content_type);
-}
-
 static int
-http_get_info (const char *filename, dlna_http_file_info_t *info)
+http_read (void *hdl, void *buf, size_t buflen);
+static off_t
+http_lseek (void *hdl, off_t offset, int origin);
+static void
+http_cleanup (void *hdl);
+static void
+http_close (void *hdl);
+
+static dlna_stream_t *
+get_file_memory (const char *url, const char *description,
+                 const size_t length, const char *content_type)
 {
-  extern ushare_t *ut;
-  
-  if (!filename || !info)
-    return 1;
+  dlna_stream_t *stream = NULL;
 
-  log_verbose ("http_get_info, filename : %s\n", filename);
+  stream = calloc (1, sizeof (dlna_stream_t));
+  stream->fd = 0;
+  stream->url = strdup (url);
+  stream->read = http_read;
+  stream->lseek = http_lseek;
+  stream->cleanup = http_cleanup;
+  stream->close = http_close;
+  strcpy (stream->mime, content_type);
+  stream->length = length;
 
-  if (ut->use_presentation && !strcmp (filename, USHARE_PRESENTATION_PAGE))
-  {
-    if (build_presentation_page (ut) < 0)
-      return 1;
-
-    set_info_file (info, ut->presentation->len,
-                   PRESENTATION_PAGE_CONTENT_TYPE);
-    return 0;
-  }
-
-  if (ut->use_presentation &&
-      !strncmp (filename, USHARE_CGI, strlen (USHARE_CGI)))
-  {
-    if (process_cgi (ut, (char *) (filename + strlen (USHARE_CGI) + 1)) < 0)
-      return 1;
-
-    set_info_file (info, ut->presentation->len,
-                   PRESENTATION_PAGE_CONTENT_TYPE);
-    return 0;
-  }
-
-  return 1;
-}
-
-static dlna_http_file_handler_t *
-get_file_memory (const char *fullpath, const char *description,
-                 const size_t length)
-{
-  dlna_http_file_handler_t *dhdl;
   web_file_t *file;
 
   file = malloc (sizeof (web_file_t));
-  file->fullpath = strdup (fullpath);
   file->pos = 0;
+  /* description is stored into a buffer object */
+  /* the buffer is allocated for different pages (presentation, cgi) */
+  /* the web server run in multi threading */
+  /* than it possible that the contain of the buffer changes before than the previous is closed */
   file->contents = strdup (description);
   file->len = length;
 
-  dhdl                       = malloc (sizeof (dlna_http_file_handler_t));
-  dhdl->external             = 1;
-  dhdl->priv                 = file;
-  
-  return ((dlna_http_file_handler_t *) dhdl);
+  stream->private = file;
+  return stream;
 }
 
-static dlna_http_file_handler_t *
-http_open (const char *filename)
+static dlna_stream_t *
+http_open (void *cookie, const char *filename)
 {
-  extern ushare_t *ut;
+  ushare_t *data = (ushare_t *)cookie;
 
   if (!filename)
     return NULL;
 
   log_verbose ("http_open, filename : %s\n", filename);
 
-  if (ut->use_presentation && ( !strcmp (filename, USHARE_PRESENTATION_PAGE)
-      || !strncmp (filename, USHARE_CGI, strlen (USHARE_CGI))))
-    return get_file_memory (USHARE_PRESENTATION_PAGE, ut->presentation->buf,
-                            ut->presentation->len);
-
+  if (data->use_presentation)
+  {
+    if (strstr (filename, USHARE_PRESENTATION_PAGE) != NULL)
+    {
+      if (build_presentation_page (data) < 0)
+        return NULL;
+      return get_file_memory (USHARE_PRESENTATION_PAGE, data->presentation->buf,
+                            data->presentation->len, PRESENTATION_PAGE_CONTENT_TYPE);
+    }
+    else if (strstr (filename, USHARE_CGI) != NULL)
+    {
+      if (process_cgi (data, (char *) (filename + strlen (USHARE_CGI) + 1)) < 0)
+        return NULL;
+      return get_file_memory (USHARE_PRESENTATION_PAGE, data->presentation->buf,
+                            data->presentation->len, PRESENTATION_PAGE_CONTENT_TYPE);
+    }
+  }
   return NULL;
 }
 
 static int
-http_read (void *hdl, char *buf, size_t buflen)
+http_read (void *hdl, void *buf, size_t buflen)
 {
-  web_file_t *file = (web_file_t *) hdl;
+  dlna_stream_t *stream = hdl;
+  web_file_t *file = (web_file_t *) stream->private;
   ssize_t len = -1;
 
   log_verbose ("http_read\n");
@@ -148,10 +138,11 @@ http_read (void *hdl, char *buf, size_t buflen)
   return len;
 }
 
-static int
-http_seek (void *hdl, off_t offset, int origin)
+static off_t
+http_lseek (void *hdl, off_t offset, int origin)
 {
-  web_file_t *file = (web_file_t *) hdl;
+  dlna_stream_t *stream = hdl;
+  web_file_t *file = (web_file_t *) stream->private;
   off_t newpos = -1;
 
   log_verbose ("http_seek\n");
@@ -163,17 +154,17 @@ http_seek (void *hdl, off_t offset, int origin)
   {
   case SEEK_SET:
     log_verbose ("Attempting to seek to %lld (was at %lld) in %s\n",
-                offset, file->pos, file->fullpath);
+                offset, file->pos, stream->url);
     newpos = offset;
     break;
   case SEEK_CUR:
     log_verbose ("Attempting to seek by %lld from %lld in %s\n",
-                offset, file->pos, file->fullpath);
+                offset, file->pos, stream->url);
     newpos = file->pos + offset;
     break;
   case SEEK_END:
     log_verbose ("Attempting to seek by %lld from end (was at %lld) in %s\n",
-                offset, file->pos, file->fullpath);
+                offset, file->pos, stream->url);
 
     newpos = file->len + offset;
     break;
@@ -181,7 +172,7 @@ http_seek (void *hdl, off_t offset, int origin)
 
   if (newpos < 0 || newpos > file->len)
   {
-    log_verbose ("%s: cannot seek: %s\n", file->fullpath, strerror (EINVAL));
+    log_verbose ("%s: cannot seek: %s\n", stream->url, strerror (EINVAL));
     return -1;
   }
 
@@ -190,31 +181,34 @@ http_seek (void *hdl, off_t offset, int origin)
   return 0;
 }
 
-static int
+static void
+http_cleanup (void *hdl)
+{
+  dlna_stream_t *stream = hdl;
+  web_file_t *file = (web_file_t *) stream->private;
+
+  file->len = 0;
+  file->pos = 0;
+}
+
+static void
 http_close (void *hdl)
 {
-  web_file_t *file = (web_file_t *) hdl;
+  dlna_stream_t *stream = hdl;
+  web_file_t *file = (web_file_t *) stream->private;
 
   log_verbose ("http_close\n");
 
   if (!file)
-    return -1;
+    return;
 
   if (file->contents)
     free (file->contents);
-
-  if (file->fullpath)
-    free (file->fullpath);
   free (file);
-
-  return 0;
+  free (stream);
 }
 
 dlna_http_callback_t ushare_http_callbacks = {
-  http_get_info,
-  http_open,
-  http_read,
-  NULL,
-  http_seek,
-  http_close
+  .open = http_open,
+  .next = NULL,
 };

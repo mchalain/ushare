@@ -71,6 +71,7 @@
 #ifdef HAVE_FAM
 #include "ufam.h"
 #endif /* HAVE_FAM */
+#include "presentation.h"
 
 #include <upnp/ffmpeg_profiler.h>
 #include <upnp/mpg123_profiler.h>
@@ -220,7 +221,8 @@ init_upnp (ushare_t *ut)
   dlna_device_set_serial_number (device, "USHARE-01");
   dlna_device_set_uuid (device, ut->udn);
 #ifdef WEB_INT
-  dlna_device_set_presentation_url (device, "ushare.html", &ushare_http_callbacks);
+  ushare_http_callbacks.cookie = ut;
+  dlna_device_set_presentation_url (device, USHARE_PRESENTATION_PAGE, &ushare_http_callbacks);
 #endif
 
   /* set default default service */
