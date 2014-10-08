@@ -635,17 +635,17 @@ check_lib iconv.h iconv "" && add_cflags -DHAVE_ICONV
 #################################################
 #   check for libdlna (mandatory)
 #################################################
-libdlna_min_version="0.4.0"
+libdlna_min_version="0.4.2"
 echolog "Checking for libdlna >= $libdlna_min_version ..."
 if [ -n "$libdlnadir" ]; then
   check_cflags -I$libdlnadir/include
   check_ldflags -L$libdlnadir/lib
 fi
-check_lib dlna.h dlna_start -ldlna || die "Error, can't find libdlna (install it) !"
+check_lib upnp/dlna.h dlna_start -ldlna || die "Error, can't find libdlna (install it) !"
 check_lib_version libdlna $libdlna_min_version || die "Error, libdlna < $libdlna_min_version !"
 add_cflags `pkg-config libdlna --cflags`
 add_extralibs `pkg-config libdlna --libs`
-add_extralibs -lpthread -lmpg123_profiler -lffmpeg_profiler
+add_extralibs -lpthread
 
 #################################################
 #   check for libfam
