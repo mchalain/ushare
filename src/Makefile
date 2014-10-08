@@ -24,8 +24,6 @@ EXTRADIST = \
 
 
 SRCS = \
-	http.c \
-	presentation.c \
 	metadata.c \
 	mime.c \
 	buffer.c \
@@ -37,6 +35,14 @@ SRCS = \
 	ctrl_telnet.c \
 	ufam.c \
 	ushare.c
+
+ifeq ($(CONFIG_WEB),yes)
+CFLAGS+=-DWEB_INT
+SRCS += \
+	http.c \
+	presentation.c \
+
+endif
 
 OBJS = $(SRCS:.c=.o)
 

@@ -311,6 +311,7 @@ cross_compile="no"
 INSTALL="/usr/bin/install -c"
 VERSION="1.1a"
 system_name=`uname -s 2>&1`
+web=yes
 
 #################################################
 #   set cpu variable and specific cpu flags
@@ -424,6 +425,10 @@ for opt do
   --enable-fam) fam="yes"
   ;;
   --disable-fam) fam="no"
+  ;;
+  --enable-web) web="yes"
+  ;;
+  --disable-web) web="no"
   ;;
   --enable-debug) debug="yes"
   ;;
@@ -658,6 +663,13 @@ if test "$fam" = "yes"; then
 fi
 
 #################################################
+#   check for web interface
+#################################################
+if test "$web" = "yes"; then
+  add_cflags -DWEB_INT
+fi
+
+#################################################
 #   logging result
 #################################################
 echolog ""
@@ -670,7 +682,6 @@ echolog "  configuration dir  $sysconfdir"
 echolog "  data dir           $datadir"
 echolog "  locales dir        $localedir"
 echolog "  mans dir           $mandir"
-echolog "  NLS support        $nls"
 echolog "  C compiler         $cc"
 echolog "  STRIP              $strip"
 echolog "  make               $make"
@@ -678,6 +689,9 @@ echolog "  CPU                $cpu ($tune)"
 echolog "  debug symbols      $debug"
 echolog "  strip symbols      $dostrip"
 echolog "  optimize           $optimize"
+echolog ""
+echolog "  NLS support        $nls"
+echolog "  WEB interface      $web"
 echolog ""
 echolog "  CFLAGS             $CFLAGS"
 echolog "  LDFLAGS            $LDFLAGS"

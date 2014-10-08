@@ -177,7 +177,9 @@ static int
 init_upnp (ushare_t *ut)
 {
   int res;
+#ifdef WEB_INT
   extern dlna_http_callback_t ushare_http_callbacks;
+#endif
   dlna_org_flags_t flags;
   
   if (!ut || !ut->name || !ut->udn || !ut->dlna || !ut->vfs)
@@ -217,7 +219,9 @@ init_upnp (ushare_t *ut)
   dlna_device_set_model_url (device, "http://ushare.geexbox.org/");
   dlna_device_set_serial_number (device, "USHARE-01");
   dlna_device_set_uuid (device, ut->udn);
+#ifdef WEB_INT
   dlna_device_set_presentation_url (device, "ushare.html", &ushare_http_callbacks);
+#endif
 
   /* set default default service */
   dlna_service_register (device, cms_service_new(ut->dlna));
