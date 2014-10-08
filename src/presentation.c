@@ -125,9 +125,10 @@ build_presentation_page (ushare_t *ut)
 {
   int i;
   char *mycodeset = NULL;
-
+printf ("%s 1\n", __FUNCTION__);
   if (!ut)
     return -1;
+printf ("%s 2\n", __FUNCTION__);
 
   if (ut->presentation)
     buffer_free (ut->presentation);
