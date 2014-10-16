@@ -75,6 +75,7 @@
 
 #include <upnp/ffmpeg_profiler.h>
 #include <upnp/mpg123_profiler.h>
+#define LIBDIR DLNA_STRINGIFY(PROFILER_LIBDIR)
 
 ushare_t *ut = NULL;
 
@@ -576,10 +577,8 @@ main (int argc, char **argv)
   ut->dlna = dlna_init ();
   ut->vfs = dlna_vfs_new (ut->dlna);
 
-  profiler = &mpg123_profiler;
-  dlna_add_profiler (ut->dlna, profiler);
-//  profiler = &ffmpeg_profiler;
-//  dlna_add_profiler (ut->dlna, profiler);
+  dlna_add_profiler_library (ut->dlna, LIBDIR"/libdlnaprofiler_ffmpeg.so");
+  dlna_add_profiler_library (ut->dlna, LIBDIR"/libdlnaprofiler_mpg123.so");
 
   /* Parse args before cfg file, as we may override the default file */
   if (parse_command_line (ut, argc, argv) < 0)

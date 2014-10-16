@@ -648,7 +648,7 @@ if [ -n "$libdlnadir" ]; then
 fi
 check_lib upnp/dlna.h dlna_start -ldlna || die "Error, can't find libdlna (install it) !"
 check_lib_version libdlna $libdlna_min_version || die "Error, libdlna < $libdlna_min_version !"
-add_cflags `pkg-config libdlna --cflags`
+add_cflags `pkg-config libdlna --cflags` -DPROFILER_LIBDIR="$libdlnadir/lib"
 add_extralibs `pkg-config libdlna --libs`
 add_extralibs -lpthread
 
