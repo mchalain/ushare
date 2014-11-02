@@ -182,16 +182,10 @@ init_upnp (ushare_t *ut)
 #ifdef WEB_INT
   extern dlna_http_callback_t ushare_http_callbacks;
 #endif
-  dlna_org_flags_t flags;
   
   if (!ut || !ut->name || !ut->udn || !ut->dlna || !ut->vfs)
     return -1;
 
-  flags = DLNA_ORG_FLAG_STREAMING_TRANSFER_MODE |
-          DLNA_ORG_FLAG_BACKGROUND_TRANSFERT_MODE |
-          DLNA_ORG_FLAG_CONNECTION_STALL |
-          DLNA_ORG_FLAG_DLNA_V15;
-  
   dlna_set_verbosity (ut->dlna, ut->verbose ? 1 : 0);
   dlna_set_extension_check (ut->dlna, 0);
   
@@ -204,7 +198,6 @@ init_upnp (ushare_t *ut)
   
   log_info (_("Initializing UPnP subsystem ...\n"));
 
-  dlna_vfs_set_mode (ut->vfs, flags);
   dlna_vfs_add_protocol (ut->vfs, http_protocol_new (ut->dlna));
 
   /* set some UPnP device properties */
@@ -565,8 +558,6 @@ ushare_kill (ctrl_telnet_client_t *client,
 int
 main (int argc, char **argv)
 {
-  const dlna_profiler_t *profiler;
-
   ut = ushare_new ();
   if (!ut)
     return EXIT_FAILURE;
