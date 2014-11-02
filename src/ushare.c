@@ -574,7 +574,6 @@ main (int argc, char **argv)
   /* Parse args before cfg file, as we may override the default file */
   if (parse_command_line (ut, argc, argv) < 0)
   {
-    dlna_uninit (ut->dlna);
     ushare_free (ut);
     return EXIT_SUCCESS;
   }
@@ -595,14 +594,12 @@ main (int argc, char **argv)
   if (!ut->contentlist)
   {
     log_error (_("Error: no content directory to be shared.\n"));
-    dlna_uninit (ut->dlna);
     ushare_free (ut);
     return EXIT_FAILURE;
   }
 
   if (!has_iface (ut->interface))
   {
-    dlna_uninit (ut->dlna);
     ushare_free (ut);
     return EXIT_FAILURE;
   }
@@ -610,7 +607,6 @@ main (int argc, char **argv)
   ut->udn = create_udn (ut->interface);
   if (!ut->udn)
   {
-    dlna_uninit (ut->dlna);
     ushare_free (ut);
     return EXIT_FAILURE;
   }
@@ -640,7 +636,6 @@ main (int argc, char **argv)
   {
     if (ctrl_telnet_start (ut->telnet_port) < 0)
     {
-      dlna_uninit (ut->dlna);
       ushare_free (ut);
       return EXIT_FAILURE;
     }
@@ -652,7 +647,6 @@ main (int argc, char **argv)
   if (init_upnp (ut) < 0)
   {
     finish_upnp (ut);
-    dlna_uninit (ut->dlna);
     ushare_free (ut);
     return EXIT_FAILURE;
   }
@@ -665,7 +659,6 @@ main (int argc, char **argv)
   if (ut->use_telnet)
     ctrl_telnet_stop ();
   finish_upnp (ut);
-  dlna_uninit (ut->dlna);
   ushare_free (ut);
   finish_iconv ();
 
