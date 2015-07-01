@@ -26,6 +26,7 @@
 #include <pthread.h>
 
 #include <upnp/dlna.h>
+#include <upnp/vfs.h>
 
 #include "content.h"
 #include "buffer.h"

@@ -160,5 +160,5 @@ build_metadata_list (ushare_t *ut)
 void
 free_metadata_list (ushare_t *ut)
 {
-  dlna_vfs_remove_item_by_id (ut->vfs, 0);
+  ut->vfs->remove_item_by_id (ut->vfs, 0);
 }
